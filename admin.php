@@ -2,7 +2,7 @@
 session_start();
 include 'db.php'; 
 
-// 1. SECURITY CHECK (Redirect if not logged in)
+// 1. SECURITY CHECK
 if(!isset($_SESSION['doctor_id'])) {
     header("Location: login.php");
     exit();
@@ -11,19 +11,62 @@ if(!isset($_SESSION['doctor_id'])) {
 $current_doc = $_SESSION['doctor_name'];
 $current_hosp = $_SESSION['hospital_name'];
 $hosp_type = $_SESSION['hospital_type'];
-
 $msg = "";
 
-// Handle New Record Submission
-if(isset($_POST['add_record'])) {
+// --- DELETE LOGIC (WITH 24H SECURITY CHECK) ---
+if(isset($_GET['delete_id'])) {
+    $del_id = $_GET['delete_id'];
+    $check = $conn->query("SELECT created_at FROM medical_records WHERE id='$del_id'");
+    $row = $check->fetch_assoc();
+    $rec_date = date('Y-m-d', strtotime($row['created_at']));
+    $today = date('Y-m-d');
+
+    if($rec_date == $today) {
+        $stmt = $conn->prepare("DELETE FROM medical_records WHERE id=? AND doctor_name=?");
+        $stmt->bind_param("is", $del_id, $current_doc);
+        if($stmt->execute()) {
+            $msg = "<div class='alert alert-warning'>Record deleted successfully.</div>";
+        }
+    } else {
+        $msg = "<div class='alert alert-danger'><b>Security Violation:</b> You cannot delete records older than 24 hours.</div>";
+    }
+}
+
+// --- EDIT FETCH LOGIC ---
+$edit_mode = false;
+$e_id = ""; $e_ic = ""; $e_cat = ""; $e_desc = "";
+
+if(isset($_GET['edit_id'])) {
+    $e_id = $_GET['edit_id'];
+    $stmt = $conn->prepare("SELECT * FROM medical_records WHERE id=? AND doctor_name=?");
+    $stmt->bind_param("is", $e_id, $current_doc);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    
+    if($res->num_rows > 0) {
+        $row = $res->fetch_assoc();
+        $rec_date = date('Y-m-d', strtotime($row['created_at']));
+        $today = date('Y-m-d');
+        
+        if($rec_date == $today) {
+            $edit_mode = true;
+            $e_ic = $row['ic_number'];
+            $e_cat = $row['category'];
+            $e_desc = str_replace("[$current_hosp] ", "", $row['description']);
+        } else {
+            $msg = "<div class='alert alert-danger'><b>Error:</b> This record is locked (Over 24 hours).</div>";
+        }
+    }
+}
+
+// --- HANDLE FORM SUBMISSION ---
+if(isset($_POST['save_record'])) {
     $ic = $_POST['ic_target'];
     $cat = $_POST['category'];
     $raw_desc = $_POST['description'];
+    $final_desc = "[$current_hosp] " . $raw_desc; 
     
-    // Auto-Format: "[Hospital Name] Description"
-    $final_desc = "[$current_hosp] " . $raw_desc;
-
-    // File Upload Logic
+    // File Upload
     $attachment = NULL;
     if(isset($_FILES['medical_image']) && $_FILES['medical_image']['error'] == 0) {
         $target_dir = "uploads/";
@@ -35,13 +78,52 @@ if(isset($_POST['add_record'])) {
         }
     }
 
-    $stmt = $conn->prepare("INSERT INTO medical_records (ic_number, category, description, doctor_name, attachment) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssss", $ic, $cat, $final_desc, $current_doc, $attachment);
-    
-    if($stmt->execute()) {
-        $msg = "<div class='alert alert-success'>Record successfully synced to Cloud!</div>";
+    if(isset($_POST['update_id']) && !empty($_POST['update_id'])) {
+        // === UPDATE EXISTING RECORD ===
+        $uid = $_POST['update_id'];
+        $stmt = $conn->prepare("UPDATE medical_records SET ic_number=?, category=?, description=? WHERE id=? AND doctor_name=?");
+        $stmt->bind_param("sssis", $ic, $cat, $final_desc, $uid, $current_doc);
+        if($stmt->execute()) {
+            $msg = "<div class='alert alert-info'>Record updated successfully!</div>";
+            $edit_mode = false; 
+            $e_id = ""; $e_ic = ""; $e_cat = ""; $e_desc = "";
+        }
     } else {
-        $msg = "<div class='alert alert-danger'>Error: " . $conn->error . "</div>";
+        // === INSERT NEW RECORD ===
+        $stmt = $conn->prepare("INSERT INTO medical_records (ic_number, category, description, doctor_name, attachment) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssss", $ic, $cat, $final_desc, $current_doc, $attachment);
+        
+        if($stmt->execute()) {
+            // === NEW FEATURE: SYNC ALLERGY TO PATIENTS TABLE ===
+            if($cat == "Allergy") {
+                // 1. Fetch current allergy info
+                $p_check = $conn->query("SELECT allergy FROM patients WHERE ic_number = '$ic'");
+                $p_data = $p_check->fetch_assoc();
+                $current_allergies = $p_data['allergy'];
+
+                // 2. Logic: Append or Replace
+                // If it was "None" or empty, replace it. Otherwise, add comma.
+                if(stripos($current_allergies, 'None') !== false || empty($current_allergies)) {
+                    $new_allergies = $raw_desc; // Replace "None" with "Peanuts"
+                } else {
+                    // Check if already exists to prevent duplicate "Peanuts, Peanuts"
+                    if(stripos($current_allergies, $raw_desc) === false) {
+                        $new_allergies = $current_allergies . ", " . $raw_desc;
+                    } else {
+                        $new_allergies = $current_allergies; // It's already there
+                    }
+                }
+
+                // 3. Update Patients Table
+                $update_p = $conn->prepare("UPDATE patients SET allergy = ? WHERE ic_number = ?");
+                $update_p->bind_param("ss", $new_allergies, $ic);
+                $update_p->execute();
+
+                $msg = "<div class='alert alert-success'><b>Success!</b> Allergy added to history AND Patient's Main Profile updated.</div>";
+            } else {
+                $msg = "<div class='alert alert-success'>Record synced to National Cloud!</div>";
+            }
+        }
     }
 }
 ?>
@@ -51,11 +133,14 @@ if(isset($_POST['add_record'])) {
 <head>
     <title>Clinical Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body { background-color: #f4f6f9; }
         .top-nav { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .verified-box { display: none; margin-top: 5px; padding: 8px; border-radius: 5px; font-size: 0.9rem; }
+        .verified-box { display: none; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+        .edit-mode-banner { background-color: #fff3cd; border: 1px solid #ffecb5; color: #664d03; padding: 10px; margin-bottom: 15px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-locked { background-color: #e9ecef; border: 1px solid #ced4da; color: #6c757d; cursor: not-allowed; font-size: 0.7rem; }
     </style>
 </head>
 <body>
@@ -80,81 +165,128 @@ if(isset($_POST['add_record'])) {
 
         <div class="row">
             <!-- INPUT FORM -->
-            <div class="col-md-5">
+            <div class="col-md-7">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-dark text-white fw-bold">
-                        Add Clinical Record
+                    <div class="card-header <?php echo $edit_mode ? 'bg-warning text-dark' : 'bg-dark text-white'; ?> fw-bold">
+                        <i class="fa-solid fa-user-doctor"></i> 
+                        <?php echo $edit_mode ? 'Edit Clinical Record (ID: '.$e_id.')' : 'Add Clinical Record'; ?>
                     </div>
                     <div class="card-body">
+                        
+                        <?php if($edit_mode): ?>
+                        <div class="edit-mode-banner">
+                            <span><i class="fa-solid fa-pen-to-square"></i> Editing active record.</span>
+                            <a href="admin.php" class="btn btn-sm btn-outline-dark">Cancel</a>
+                        </div>
+                        <?php endif; ?>
+
                         <form method="POST" enctype="multipart/form-data">
-                            
-                            <!-- 1. IC NUMBER WITH LIVE CHECK -->
+                            <input type="hidden" name="update_id" value="<?php echo $e_id; ?>">
+
+                            <!-- IC NUMBER -->
                             <div class="mb-3">
                                 <label class="fw-bold">Patient IC Number</label>
                                 <div class="input-group">
-                                    <input type="text" name="ic_target" id="ic_input" class="form-control" placeholder="e.g. 900101-14-1234" required autocomplete="off">
-                                    <button class="btn btn-outline-secondary" type="button" id="checkBtn">Check</button>
-                                </div>
-                                
-                                <!-- The "Column Below" logic -->
-                                <div id="name_display" class="verified-box alert-success">
-                                    ✅ Verified: <strong>Ali Bin Ahmad</strong>
-                                </div>
-                                <div id="error_display" class="verified-box alert-danger">
-                                    ❌ Error: Patient Not Found!
+                                    <input type="text" name="ic_target" id="ic_input" class="form-control" 
+                                           value="<?php echo $e_ic; ?>" placeholder="e.g. 900101-14-1234" required autocomplete="off">
+                                    <button class="btn btn-secondary" type="button" id="checkBtn">Verify Identity</button>
                                 </div>
                             </div>
+                            
+                            <!-- DYNAMIC PATIENT PANEL -->
+                            <div id="patient_panel" style="display:none;">
+                                <div class="alert alert-success d-flex justify-content-between align-items-center">
+                                    <div>✅ <strong><span id="p_name"></span></strong><br><small>Blood: <span id="p_blood"></span></small></div>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light small text-muted fw-bold">History (Last 3)</div>
+                                    <ul class="list-group list-group-flush" id="history_list"></ul>
+                                </div>
+                            </div>
+                            <div id="error_display" class="verified-box alert-danger">❌ Error: Patient Not Found!</div>
+                            <hr>
 
-                            <div class="mb-3">
-                                <label>Record Type</label>
-                                <select name="category" class="form-select">
-                                    <option value="X-Ray">🩻 X-Ray / Imaging</option>
-                                    <option value="Lab Result">🩸 Lab Report</option>
-                                    <option value="Allergy">⚠️ New Allergy Found</option>
-                                    <option value="Diagnosis">📋 Clinical Diagnosis</option>
-                                </select>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Record Type</label>
+                                    <select name="category" class="form-select">
+                                        <!-- NOTICE: I explicitly kept Allergy here -->
+                                        <option value="X-Ray" <?php if($e_cat=='X-Ray') echo 'selected'; ?>>🩻 X-Ray</option>
+                                        <option value="CT Scan" <?php if($e_cat=='CT Scan') echo 'selected'; ?>>🧠 CT Scan</option>
+                                        <option value="Lab Result" <?php if($e_cat=='Lab Result') echo 'selected'; ?>>🩸 Lab Report</option>
+                                        <option value="Allergy" <?php if($e_cat=='Allergy') echo 'selected'; ?>>⚠️ Allergy </option>
+                                        <option value="Diagnosis" <?php if($e_cat=='Diagnosis') echo 'selected'; ?>>📋 Clinical Diagnosis</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Attachment</label>
+                                    <input type="file" name="medical_image" class="form-control" accept="image/*">
+                                </div>
                             </div>
 
                             <div class="mb-3">
                                 <label>Findings / Description</label>
-                                <textarea name="description" class="form-control" rows="3" placeholder="Enter clinical details..." required></textarea>
+                                <textarea name="description" class="form-control" rows="3" placeholder="For Allergy: Type ONLY the allergen name (e.g. Peanuts)" required><?php echo $e_desc; ?></textarea>
                             </div>
 
-                            <div class="mb-3">
-                                <label>Attachment (Image)</label>
-                                <input type="file" name="medical_image" class="form-control" accept="image/*">
-                            </div>
-
-                            <button type="submit" name="add_record" class="btn btn-success w-100 fw-bold">Submit Record</button>
+                            <button type="submit" name="save_record" class="btn <?php echo $edit_mode ? 'btn-warning' : 'btn-primary'; ?> w-100 fw-bold">
+                                <?php echo $edit_mode ? 'Update Record' : 'Submit Record'; ?>
+                            </button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- PREVIEW LIST -->
-            <div class="col-md-7">
-                <h4>Recent System Uploads</h4>
-                <div class="list-group shadow-sm">
-                    <?php 
-                    $rec = $conn->query("SELECT * FROM medical_records ORDER BY id DESC LIMIT 5");
-                    while($r = $rec->fetch_assoc()): 
-                    ?>
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1 text-primary"><?php echo $r['category']; ?></h5>
-                                <small class="text-muted"><?php echo date('d M H:i', strtotime($r['created_at'])); ?></small>
-                            </div>
-                            <p class="mb-1 fw-bold"><?php echo $r['description']; ?></p>
-                            
-                            <?php if($r['attachment']): ?>
-                                <img src="uploads/<?php echo $r['attachment']; ?>" style="height: 50px; border:1px solid #ddd; border-radius:4px;" class="mt-1">
-                            <?php endif; ?>
+            <!-- SIDEBAR: LOCAL LOGS -->
+            <div class="col-md-5">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white fw-bold">
+                        📂 <?php echo $current_hosp; ?> (Local Logs)
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <?php 
+                        $search_term = '[' . $current_hosp . ']%';
+                        // UPDATED: Order by 'created_at' so the actual medical date is used, not the upload order.
+                        $rec = $conn->query("SELECT * FROM medical_records WHERE description LIKE '$search_term' ORDER BY created_at DESC LIMIT 5");
+                        $today_date = date('Y-m-d');
 
-                            <div class="mt-1 small text-muted">
-                                Signed by: <?php echo $r['doctor_name']; ?>
+                        if($rec->num_rows > 0):
+                            while($r = $rec->fetch_assoc()): 
+                                $is_mine = ($r['doctor_name'] == $current_doc);
+                                $rec_date = date('Y-m-d', strtotime($r['created_at']));
+                                $is_today = ($rec_date == $today_date);
+                        ?>
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 text-primary"><?php echo $r['category']; ?></h6>
+                                        <small class="text-muted fst-italic">
+                                            <?php echo $is_mine ? 'My Entry' : 'Dr. ' . $r['doctor_name']; ?>
+                                            • <?php echo date('d M H:i', strtotime($r['created_at'])); ?>
+                                        </small>
+                                    </div>
+                                    
+                                    <?php if($is_mine): ?>
+                                        <?php if($is_today): ?>
+                                            <div class="btn-group">
+                                                <a href="admin.php?edit_id=<?php echo $r['id']; ?>" class="btn btn-outline-warning btn-sm py-0" style="font-size: 0.7rem;">Edit</a>
+                                                <a href="admin.php?delete_id=<?php echo $r['id']; ?>" class="btn btn-outline-danger btn-sm py-0" style="font-size: 0.7rem;" onclick="return confirm('Delete this record?');">Del</a>
+                                            </div>
+                                        <?php else: ?>
+                                            <button class="btn btn-locked btn-sm py-0" onclick="alert('SECURITY PROTOCOL:\nRecord locked (24h+).');"><i class="fa-solid fa-lock"></i> Locked</button>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="mb-1 mt-1 small text-dark"><?php echo str_replace("[$current_hosp] ", "", $r['description']); ?></p>
                             </div>
-                        </div>
-                    <?php endwhile; ?>
+                        <?php 
+                            endwhile; 
+                        else:
+                        ?>
+                            <div class="p-3 text-center text-muted small">No recent uploads found.</div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -163,11 +295,8 @@ if(isset($_POST['add_record'])) {
     <!-- JAVASCRIPT FOR LIVE IC CHECK -->
     <script>
         $(document).ready(function(){
-            
-            // Function to run the check
             function checkIC() {
                 var icNum = $('#ic_input').val();
-                
                 if(icNum.length > 5) {
                     $.ajax({
                         url: 'check_patient.php',
@@ -177,25 +306,32 @@ if(isset($_POST['add_record'])) {
                         success: function(response){
                             if(response.status == 'found') {
                                 $('#error_display').hide();
-                                $('#name_display').html('✅ Verified: <strong>' + response.name + '</strong>').slideDown();
+                                $('#p_name').text(response.name);
+                                $('#p_blood').text(response.blood);
+                                var historyHtml = '';
+                                if(response.history.length > 0) {
+                                    response.history.forEach(function(item) {
+                                        historyHtml += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+                                        historyHtml += '<div><strong>' + item.category + '</strong><br><small class="text-muted">' + item.description + '</small></div>';
+                                        historyHtml += '<span class="badge bg-secondary rounded-pill">' + item.date_formatted + '</span>';
+                                        historyHtml += '</li>';
+                                    });
+                                } else {
+                                    historyHtml = '<li class="list-group-item text-muted text-center">No previous history.</li>';
+                                }
+                                $('#history_list').html(historyHtml);
+                                $('#patient_panel').slideDown();
                             } else {
-                                $('#name_display').hide();
+                                $('#patient_panel').hide();
                                 $('#error_display').slideDown();
                             }
                         }
                     });
                 }
             }
-
-            // Run check when "Check" button is clicked
-            $('#checkBtn').click(function(){
-                checkIC();
-            });
-
-            // Also run check when user leaves the input box (blur)
-            $('#ic_input').blur(function(){
-                checkIC();
-            });
+            $('#checkBtn').click(checkIC);
+            $('#ic_input').blur(checkIC);
+            if($('#ic_input').val().length > 5) { checkIC(); }
         });
     </script>
 </body>

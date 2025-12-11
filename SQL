@@ -88,3 +88,53 @@ INSERT INTO doctors (name, hospital_id) VALUES
 ('Dr. Sarah Lim', 2),   -- Works at Serdang
 ('Dr. Kumar', 9),       -- Works at Sunway (Private)
 ('Dr. Wong', 10);       -- Works at Gleneagles (Private)
+------------------------------------------------
+-- 1. ADD MORE DOCTORS (Gov & Private)
+INSERT INTO doctors (name, hospital_id) VALUES 
+('Dr. Aminah binti Razak', 4),   -- Hospital Putrajaya (Gov)
+('Dr. Brenda Lee', 7),           -- Hospital Pulau Pinang (Gov)
+('Dr. Rajandran a/l Muthu', 11), -- Pantai Hospital KL (Private)
+('Dr. Lim Wei Seng', 3);         -- Hospital Sungai Buloh (Gov)
+
+-- 2. ADD MORE PATIENTS (Diverse Profiles)
+INSERT INTO patients (ic_number, name, blood_type, allergy, emergency_contact) VALUES 
+('880505-10-5588', 'Tan Mei Ling', 'A+', 'SHELLFISH (Severe)', '+6012-9988776'),
+('751212-08-9988', 'Muthusamy a/l Rajan', 'B+', 'NSAIDS / Aspirin', '+6019-1122334'),
+('950220-14-1122', 'Nurul Izzah', 'AB-', 'None', '+6017-4455667');
+
+-- 3. ADD INITIAL HISTORY (So they aren't empty when you scan)
+-- Tan Mei Ling went to Pantai Hospital (Private) for rash
+INSERT INTO medical_records (ic_number, category, description, doctor_name) VALUES 
+('880505-10-5588', 'Diagnosis', '[Pantai Hospital KL] Acute allergic reaction to Prawns. Administered Antihistamine.', 'Dr. Rajandran a/l Muthu');
+
+-- Muthusamy went to Hospital Putrajaya (Gov) for Diabetes check
+INSERT INTO medical_records (ic_number, category, description, doctor_name) VALUES 
+('751212-08-9988', 'Lab Result', '[Hospital Putrajaya] Blood Glucose Level: 7.5 mmol/L. Stable.', 'Dr. Aminah binti Razak');
+
+-- ADDING COLLEAGUES (Doctors in the SAME hospitals)
+
+-- 1. Colleagues for Dr. Azlan at HKL (Hospital ID: 1)
+INSERT INTO doctors (name, hospital_id) VALUES 
+('Dr. Faridah binti Yusof', 1),    -- Emergency Dept
+('Dr. Kevin Tan', 1),              -- Surgery Dept
+('Dr. Nurul Huda', 1);             -- Cardiology
+
+-- 2. Colleagues for Dr. Kumar at Sunway Medical (Hospital ID: 9)
+INSERT INTO doctors (name, hospital_id) VALUES 
+('Dr. Jason Liew', 9),             -- Pediatrics
+('Dr. Susan George', 9);           -- Orthopedics
+
+-- 3. Colleagues for Dr. Sarah at Hospital Serdang (Hospital ID: 2)
+INSERT INTO doctors (name, hospital_id) VALUES 
+('Dr. Rizwan Ali', 2);
+
+
+
+-- 1. MIGRATE existing allergies to the medical_records table
+INSERT INTO medical_records (ic_number, category, description, doctor_name)
+SELECT ic_number, 'Allergy', allergy, 'System Migration'
+FROM patients 
+WHERE allergy IS NOT NULL AND allergy != '' AND allergy != 'None';
+
+-- 2. DROP the old column (This is the big change)
+ALTER TABLE patients DROP COLUMN allergy;
