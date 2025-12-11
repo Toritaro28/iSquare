@@ -194,7 +194,7 @@ if($ic) {
                         <?php if($row['attachment']): ?>
                             <img src="uploads/<?php echo $row['attachment']; ?>" class="scan-img shadow-sm" onclick="showImage(this.src)">
                         <?php endif; ?>
-                        <small class="text-muted d-block mt-2 fst-italic text-end">Dr. <?php echo $row['doctor_name']; ?></small>
+                        <small class="text-muted d-block mt-2 fst-italic text-end"><?php echo $row['doctor_name']; ?></small>
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
