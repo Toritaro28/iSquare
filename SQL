@@ -12,3 +12,21 @@ CREATE TABLE patients (
 
 INSERT INTO patients (ic_number, name, blood_type, allergy, emergency_contact) 
 VALUES ('900101-14-1234', 'Ali Bin Ahmad', 'O+', 'PENICILLIN (Severe)', '+6012-3456789');
+
+
+
+
+
+------------------------------------------------
+--IF error while pasting please paste from here--
+------------------------------------------------
+-- 1. Create the Security Log Table
+CREATE TABLE IF NOT EXISTS access_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ic_number VARCHAR(20) NOT NULL,
+    doctor_name VARCHAR(100) DEFAULT 'Dr. Azlan (Emergency Dept)',
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Make sure your patients table allows NULLs for smoother updates if needed
+ALTER TABLE patients MODIFY allergy VARCHAR(255) DEFAULT 'None';

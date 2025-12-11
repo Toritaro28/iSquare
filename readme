@@ -1,0 +1,34 @@
+# MyHealthID - Universal Emergency Access via National Digital ID
+*Hackathon Submission 2024*
+
+### 🚑 The Problem
+In an emergency, doctors have zero information about an unconscious patient. Existing hospital systems (Private vs Government) are siloed and do not talk to each other.
+
+### 💡 The Solution
+MyHealthID leverages the **National Digital ID** framework to allow authorized medical personnel to instantly retrieve critical data (Blood Type, Severe Allergies, Emergency Contacts) by scanning a patient's ID/QR.
+
+### 🛠️ Tech Stack
+*   **Backend:** PHP (Native), MySQL
+*   **Frontend:** Bootstrap 5, HTML5
+*   **Hardware:** Works on any smartphone with a camera (No specialized scanners needed).
+
+### 🚀 Key Features
+1.  **Instant Retrieval:** < 3 seconds to get critical allergy info.
+2.  **Privacy Audit:** Every scan is logged in a centralized "Access Log" (Anti-Stalking/Privacy protection).
+3.  **Cross-Platform:** Bridges the gap between Private & Public healthcare data.
+
+### 📸 How to Demo
+1.  Open `admin.php` on a Laptop (Acts as Hospital Database).
+2.  Open `scan.php?id=900101-14-1234` on a Mobile Phone (Acts as Doctor).
+3.  Update an allergy in Admin -> Watch it update instantly on the Phone.
+
+
+
+HI everyone.
+To run this demo, you should
+1) open CMD / powershell
+2) ipconfig<!-- copy this and paste it -->
+3) find your IPV4 Address
+4) http:// + your IP + /iSquare/scan.php?id=900101-14-1234
+5) then you can go generate QR in any QR generator
+6) scan with your phone and done
