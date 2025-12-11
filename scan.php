@@ -167,7 +167,7 @@ if($ic) {
                             <img src="uploads/<?php echo $row['attachment']; ?>" class="scan-img shadow-sm" onclick="showImage(this.src)">
                         <?php endif; ?>
                         <!-- USING JOINED NAME FROM DB -->
-                        <small class="text-muted d-block mt-2 fst-italic text-end">Dr. <?php echo $row['doc_name']; ?></small>
+                        <small class="text-muted d-block mt-2 fst-italic text-end"><?php echo $row['doc_name']; ?></small>
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
