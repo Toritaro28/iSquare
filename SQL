@@ -1,0 +1,14 @@
+
+CREATE TABLE patients (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ic_number VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    blood_type VARCHAR(5),
+    allergy VARCHAR(255),
+    emergency_contact VARCHAR(20),
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+INSERT INTO patients (ic_number, name, blood_type, allergy, emergency_contact) 
+VALUES ('900101-14-1234', 'Ali Bin Ahmad', 'O+', 'PENICILLIN (Severe)', '+6012-3456789');
