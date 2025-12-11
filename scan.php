@@ -3,13 +3,9 @@ include 'db.php';
 
 $ic = isset($_GET['id']) ? $conn->real_escape_string($_GET['id']) : '';
 
-// 1. ROBUST MODE DETECTION (Fixes the issue)
-// We trim whitespace and make it lowercase to prevent errors
+// 1. GET MODE (NFC vs QR)
 $raw_mode = isset($_GET['mode']) ? $_GET['mode'] : 'qr';
 $mode = strtolower(trim($raw_mode)); 
-$filter = isset($_GET['cat']) ? $_GET['cat'] : 'All';
-
-// Determine if this is NFC Emergency Mode
 $is_nfc_emergency = ($mode === 'nfc');
 
 $patient = null;
@@ -22,7 +18,7 @@ if($ic) {
     if($result && $result->num_rows > 0) {
         $patient = $result->fetch_assoc();
         
-        // Log Access
+        // Log Access (Logs only once per scan now, not every time you filter)
         $log_type = $is_nfc_emergency ? 'EMERGENCY_OVERRIDE' : 'PATIENT_CONSENT';
         $alert_status = $is_nfc_emergency ? 1 : 0;
         
@@ -30,13 +26,9 @@ if($ic) {
                     VALUES ('$ic', 'Dr. Scanner (Mobile)', '$log_type', '$alert_status')";
         $conn->query($log_sql);
 
-        // Get History
-        $sql_history = "SELECT * FROM medical_records WHERE ic_number = '$ic'";
-        if($filter != 'All') {
-            $cat_safe = $conn->real_escape_string($filter);
-            $sql_history .= " AND category = '$cat_safe'";
-        }
-        $sql_history .= " ORDER BY created_at DESC";
+        // 2. GET ALL HISTORY (We removed the SQL Filter)
+        // We load everything now and filter with JavaScript later
+        $sql_history = "SELECT * FROM medical_records WHERE ic_number = '$ic' ORDER BY created_at DESC";
         $records = $conn->query($sql_history);
     }
 }
@@ -54,24 +46,33 @@ if($ic) {
         :root { --primary-color: #00bf8f; --bg-color: #f0f2f5; }
         body { background-color: var(--bg-color); font-family: -apple-system, sans-serif; padding-bottom: 80px; }
         
-        /* Layout Styles */
         .app-header { background: linear-gradient(135deg, #004d40 0%, #009688 100%); color: white; padding: 20px 20px 50px 20px; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; margin-bottom: -30px; }
         .profile-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); text-align: center; margin-bottom: 20px; }
         .avatar-circle { width: 70px; height: 70px; background: #005c4b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; margin: 0 auto 10px auto; border: 4px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
         .info-box { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; height: 100%; }
         .info-value { font-size: 1.2rem; font-weight: 800; color: #212529; }
-        .timeline-item { background: white; border-radius: 16px; padding: 16px; margin-bottom: 15px; border-left: 5px solid #ccc; }
-        .type-X-Ray { border-left-color: #007bff; } .type-CT-Scan { border-left-color: #9c27b0; } .type-Allergy { border-left-color: #dc3545; }
-        .scan-img { width: 100%; border-radius: 10px; margin-top: 10px; }
-        .filter-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
-        .filter-chip { white-space: nowrap; padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid #ddd; color: #555; background: white; }
-        .chip-active { background-color: #004d40; color: white; border-color: #004d40; }
         
-        /* SECURITY OVERLAY STYLES */
+        /* Timeline Items */
+        .timeline-item { background: white; border-radius: 16px; padding: 16px; margin-bottom: 15px; border-left: 5px solid #ccc; transition: all 0.3s ease; }
+        .type-X-Ray { border-left-color: #007bff; } 
+        .type-CT-Scan { border-left-color: #9c27b0; } 
+        .type-Allergy { border-left-color: #dc3545; }
+        
+        .scan-img { width: 100%; border-radius: 10px; margin-top: 10px; }
+        
+        /* Filter Chips - Now Buttons, not Links */
+        .filter-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-chip { 
+            white-space: nowrap; padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; 
+            border: 1px solid #ddd; color: #555; background: white; cursor: pointer;
+        }
+        .chip-active { background-color: #004d40; color: white; border-color: #004d40; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        /* Security Overlay */
         #nfc-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); z-index: 2000; 
-            /* PHP CONTROLS THIS DISPLAY NOW: */
+            /* Controlled by PHP initially */
             display: none; 
             flex-direction: column; justify-content: center; align-items: center; 
             padding: 20px; text-align: center; color: white; 
@@ -91,8 +92,7 @@ if($ic) {
         <h5 class="fw-bold text-dark">Handshaking with National ID...</h5>
     </div>
 
-    <!-- === MODE 1: BREAK GLASS MODAL === -->
-    <!-- We use PHP to set style="display:flex" if NFC is detected -->
+    <!-- === BREAK GLASS MODAL === -->
     <div id="nfc-overlay" style="<?php echo $is_nfc_emergency ? 'display:flex !important;' : 'display:none;'; ?>">
         <div class="mb-4">
             <i class="fa-solid fa-triangle-exclamation text-danger" style="font-size: 5rem;"></i>
@@ -105,7 +105,7 @@ if($ic) {
                 <i class="fa-solid fa-gavel me-2"></i> SYSTEM AUDIT
             </div>
             <small class="d-block text-white">1. Access will be permanently logged.</small>
-            <small class="d-block text-white">2. SMS Alert sent to Next-of-Kin (+6012-***8787).</small>
+            <small class="d-block text-white">2. SMS Alert sent to Next-of-Kin.</small>
         </div>
 
         <button onclick="unlockEmergency()" class="btn btn-danger btn-lg w-100 fw-bold py-3 pulse-red shadow">
@@ -113,15 +113,13 @@ if($ic) {
         </button>
     </div>
 
-    <!-- === MAIN APP CONTENT === -->
+    <!-- === MAIN CONTENT === -->
     <div id="data">
         
-        <!-- Success Banner for QR Mode -->
         <div id="qr-success-banner" class="bg-success text-white p-2 text-center small fw-bold" style="display:none;">
             <i class="fa-solid fa-check-circle me-1"></i> Patient Consent Verified (Dynamic QR)
         </div>
         
-        <!-- Emergency Banner for NFC Mode -->
         <div id="nfc-warning-banner" class="bg-danger text-white p-2 text-center small fw-bold" style="display:none;">
             <i class="fa-solid fa-lock-open me-1"></i> EMERGENCY OVERRIDE ACTIVE
         </div>
@@ -170,20 +168,24 @@ if($ic) {
             </div>
             <?php endif; ?>
 
+            <!-- INSTANT FILTER CHIPS (NO PAGE RELOAD) -->
             <div class="filter-scroll mb-3 mt-4">
-                <a href="?id=<?php echo $ic; ?>&mode=<?php echo $mode; ?>&cat=All" class="filter-chip <?php echo $filter == 'All' ? 'chip-active' : ''; ?>">All Records</a>
-                <a href="?id=<?php echo $ic; ?>&mode=<?php echo $mode; ?>&cat=X-Ray" class="filter-chip <?php echo $filter == 'X-Ray' ? 'chip-active' : ''; ?>">🩻 X-Ray</a>
-                <a href="?id=<?php echo $ic; ?>&mode=<?php echo $mode; ?>&cat=CT Scan" class="filter-chip <?php echo $filter == 'CT Scan' ? 'chip-active' : ''; ?>">🧠 CT Scan</a>
-                <a href="?id=<?php echo $ic; ?>&mode=<?php echo $mode; ?>&cat=Allergy" class="filter-chip <?php echo $filter == 'Allergy' ? 'chip-active' : ''; ?>">⚠️ Allergy</a>
-                <a href="?id=<?php echo $ic; ?>&mode=<?php echo $mode; ?>&cat=Lab Result"  class="filter-chip <?php echo $filter == 'Lab Result' ? 'chip-active' : ''; ?>">🩸 Lab Report</a>
-                <a href="?id=<?php echo $ic; ?>&mode=<?php echo $mode; ?>&cat=Diagnosis" class="filter-chip <?php echo $filter == 'Diagnosis' ? 'chip-active' : ''; ?>">📋 Clinical Diagnosi</a>
-            </div>
-            
+                <button onclick="filterContent('All', this)" class="filter-chip chip-active">All Records</button>
+                <button onclick="filterContent('X-Ray', this)" class="filter-chip">🩻 X-Ray</button>
+                <button onclick="filterContent('CT Scan', this)" class="filter-chip">🧠 CT Scan</button>
+                <button onclick="filterContent('Allergy', this)" class="filter-chip">⚠️ Allergy</button>
+                <button onclick="filterContent('Lab Result', this)" class="filter-chip">🩸 Lab</button>
+                <button onclick="filterContent('Diagnosis', this)" class="filter-chip">📋 Clinical Diagnosis</button>
 
+            </div>
+
+            <div id="timeline-container">
             <?php if($records && $records->num_rows > 0): ?>
                 <?php while($row = $records->fetch_assoc()): 
                     $cssClass = str_replace(' ', '-', $row['category']); ?>
-                    <div class="timeline-item type-<?php echo $cssClass; ?>">
+                    
+                    <!-- We add a 'data-category' attribute here for JavaScript to find -->
+                    <div class="timeline-item type-<?php echo $cssClass; ?>" data-category="<?php echo $row['category']; ?>">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="badge bg-dark"><?php echo $row['category']; ?></span>
                             <small class="text-muted"><?php echo date('d M Y', strtotime($row['created_at'])); ?></small>
@@ -198,14 +200,13 @@ if($ic) {
             <?php else: ?>
                 <div class="text-center text-muted py-4">No records found.</div>
             <?php endif; ?>
+            </div>
 
             <?php else: ?>
                 <div class="alert alert-danger text-center mt-4">Patient ID Invalid</div>
             <?php endif; ?>
         </div>
     </div>
-    
-    
 
     <!-- Image Modal -->
     <div class="modal fade" id="imageModal" tabindex="-1">
@@ -218,32 +219,49 @@ if($ic) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Pass PHP variable to JS
         var isEmergency = <?php echo $is_nfc_emergency ? 'true' : 'false'; ?>;
 
         document.addEventListener("DOMContentLoaded", function() {
             setTimeout(function() {
-                // 1. Hide Loading
                 document.getElementById('loading').style.display = 'none';
                 
-                // 2. Decide what to show
                 if (isEmergency) {
-                    // It is NFC: The PHP style="display:flex" is already active for overlay.
-                    // We just need to make sure Data is hidden.
-                    // (Logic handled mostly by PHP, but this is a double check)
+                    // NFC: Overlay handled by PHP style, just ensure data is hidden behind it
                 } else {
-                    // It is QR: Show Data + Green Banner
+                    // QR: Show Data + Green Banner
                     document.getElementById('qr-success-banner').style.display = 'block';
                     document.getElementById('data').style.display = 'block';
                 }
             }, 1000);
         });
 
-        // The "Break Glass" Action
+        // Break Glass Function
         function unlockEmergency() {
             document.getElementById('nfc-overlay').style.display = 'none';
             document.getElementById('data').style.display = 'block';
             document.getElementById('nfc-warning-banner').style.display = 'block';
+        }
+
+        // --- NEW INSTANT FILTER LOGIC ---
+        function filterContent(category, btnElement) {
+            // 1. Update Buttons (Visual)
+            var buttons = document.getElementsByClassName('filter-chip');
+            for(var i=0; i<buttons.length; i++) {
+                buttons[i].classList.remove('chip-active');
+            }
+            btnElement.classList.add('chip-active');
+
+            // 2. Hide/Show Items
+            var items = document.getElementsByClassName('timeline-item');
+            for(var i=0; i<items.length; i++) {
+                var itemCat = items[i].getAttribute('data-category');
+                
+                if(category === 'All' || itemCat === category) {
+                    items[i].style.display = 'block';
+                } else {
+                    items[i].style.display = 'none';
+                }
+            }
         }
 
         function showImage(src) {
