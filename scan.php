@@ -2,6 +2,9 @@
 include 'db.php'; 
 
 $ic = isset($_GET['id']) ? $conn->real_escape_string($_GET['id']) : '';
+// GET FILTER (Default to 'All')
+$filter = isset($_GET['cat']) ? $_GET['cat'] : 'All';
+
 $patient = null;
 $records = null;
 
@@ -12,11 +15,20 @@ if($ic) {
     if($result && $result->num_rows > 0) {
         $patient = $result->fetch_assoc();
         
-        // 2. Log Access (Security)
+        // 2. Log Access
         $conn->query("INSERT INTO access_logs (ic_number, doctor_name) VALUES ('$ic', 'Dr. Scanner (Mobile)')");
 
-        // 3. Get History (Ordered by Date)
-        $records = $conn->query("SELECT * FROM medical_records WHERE ic_number = '$ic' ORDER BY created_at DESC");
+        // 3. Get History (With Filter Logic)
+        $sql_history = "SELECT * FROM medical_records WHERE ic_number = '$ic'";
+        
+        if($filter != 'All') {
+            // Add filtering if specific category selected
+            $cat_safe = $conn->real_escape_string($filter);
+            $sql_history .= " AND category = '$cat_safe'";
+        }
+        
+        $sql_history .= " ORDER BY created_at DESC";
+        $records = $conn->query($sql_history);
     }
 }
 ?>
@@ -31,7 +43,7 @@ if($ic) {
     
     <style>
         :root {
-            --primary-color: #00bf8f; /* Modern Teal */
+            --primary-color: #00bf8f;
             --primary-dark: #005c4b;
             --bg-color: #f0f2f5;
         }
@@ -93,6 +105,30 @@ if($ic) {
             display: flex; align-items: center; gap: 10px;
         }
 
+        /* Filter Chips (Scrollable) */
+        .filter-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
+        
+        .filter-chip {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .chip-active { background-color: #004d40; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .chip-inactive { background-color: white; color: #555; border: 1px solid #ddd; }
+
         /* Timeline Styling */
         .timeline-item {
             background: white;
@@ -124,16 +160,14 @@ if($ic) {
     </div>
 
     <div id="data">
-        <!-- 1. HEADER -->
+        <!-- 1. HEADER (Removed Live Badge) -->
         <div class="app-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="m-0 fw-bold"><i class="fa-solid fa-shield-heart me-2"></i>MyHealthID</h5>
                     <small class="opacity-75">Provider Access Mode</small>
                 </div>
-                <div class="badge bg-white text-dark shadow-sm px-3 py-2 rounded-pill">
-                    Live
-                </div>
+                <!-- Clean Header, no badges -->
             </div>
         </div>
 
@@ -150,7 +184,7 @@ if($ic) {
                 <span class="badge bg-success rounded-pill px-3">Identity Verified</span>
             </div>
 
-            <!-- 3. VITALS GRID (Blood & Emergency) -->
+            <!-- 3. VITALS GRID -->
             <div class="row g-3 mb-3">
                 <div class="col-6">
                     <div class="info-box">
@@ -163,7 +197,6 @@ if($ic) {
                     <div class="info-box">
                         <i class="fa-solid fa-phone-volume text-success mb-2 fs-4"></i>
                         <div class="info-label">Emergency</div>
-                        <!-- Click to Call Feature -->
                         <a href="tel:<?php echo $patient['emergency_contact']; ?>" class="info-value text-decoration-none d-block text-truncate">
                             <?php echo $patient['emergency_contact']; ?>
                         </a>
@@ -171,7 +204,7 @@ if($ic) {
                 </div>
             </div>
 
-            <!-- 4. ALLERGY ALERT (Only show if exists) -->
+            <!-- 4. ALLERGY ALERT -->
             <?php if($patient['allergy'] && $patient['allergy'] != 'None'): ?>
             <div class="allergy-box shadow-sm">
                 <i class="fa-solid fa-triangle-exclamation fs-3"></i>
@@ -182,14 +215,35 @@ if($ic) {
             </div>
             <?php endif; ?>
 
-            <!-- 5. MEDICAL TIMELINE -->
-            <h6 class="text-muted ms-2 mb-3 text-uppercase fw-bold" style="font-size:0.8rem;">
-                <i class="fa-solid fa-clock-rotate-left me-1"></i> Patient History
-            </h6>
+            <!-- 5. FILTER CHIPS (NEW FEATURE) -->
+            <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+                <h6 class="text-muted text-uppercase fw-bold m-0" style="font-size:0.8rem;">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i> Patient History
+                </h6>
+            </div>
 
+            <div class="filter-scroll mb-3">
+                <a href="?id=<?php echo $ic; ?>&cat=All" 
+                   class="filter-chip <?php echo $filter == 'All' ? 'chip-active' : 'chip-inactive'; ?>">All Records</a>
+                
+                <a href="?id=<?php echo $ic; ?>&cat=X-Ray" 
+                   class="filter-chip <?php echo $filter == 'X-Ray' ? 'chip-active' : 'chip-inactive'; ?>">🩻 X-Ray</a>
+                
+                <a href="?id=<?php echo $ic; ?>&cat=CT Scan" 
+                   class="filter-chip <?php echo $filter == 'CT Scan' ? 'chip-active' : 'chip-inactive'; ?>">🧠 CT Scan</a>
+                   
+                <a href="?id=<?php echo $ic; ?>&cat=Allergy" 
+                   class="filter-chip <?php echo $filter == 'Allergy' ? 'chip-active' : 'chip-inactive'; ?>">⚠️ Allergy</a>
+                   
+                <a href="?id=<?php echo $ic; ?>&cat=Lab Result" 
+                   class="filter-chip <?php echo $filter == 'Lab Result' ? 'chip-active' : 'chip-inactive'; ?>">🩸 Lab Report</a>
+                <a href="?id=<?php echo $ic; ?>&cat=Diagnosis" 
+                   class="filter-chip <?php echo $filter == 'Diagnosis' ? 'chip-active' : 'chip-inactive'; ?>">📋 Clinical Diagnosis</a>
+            </div>
+
+            <!-- 6. MEDICAL TIMELINE LOOP -->
             <?php if($records && $records->num_rows > 0): ?>
                 <?php while($row = $records->fetch_assoc()): 
-                    // Handle space in CSS class name (e.g. "CT Scan" -> "CT-Scan")
                     $cssClass = str_replace(' ', '-', $row['category']);
                 ?>
                     <div class="timeline-item type-<?php echo $cssClass; ?>">
@@ -198,10 +252,8 @@ if($ic) {
                             <small class="text-muted"><?php echo date('d M Y', strtotime($row['created_at'])); ?></small>
                         </div>
                         
-                        <!-- Description -->
                         <p class="mb-1 fw-medium text-dark"><?php echo $row['description']; ?></p>
                         
-                        <!-- Image Attachment -->
                         <?php if($row['attachment']): ?>
                             <div class="mt-2 position-relative">
                                 <img src="uploads/<?php echo $row['attachment']; ?>" 
@@ -222,9 +274,10 @@ if($ic) {
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
-                <div class="text-center text-muted p-4 bg-white rounded-3">
-                    <i class="fa-regular fa-folder-open fs-1 mb-2"></i>
-                    <p>No medical history found.</p>
+                <div class="text-center text-muted p-4 bg-white rounded-3 shadow-sm">
+                    <i class="fa-regular fa-folder-open fs-1 mb-2 opacity-50"></i>
+                    <p class="m-0">No records found for "<?php echo $filter; ?>".</p>
+                    <a href="?id=<?php echo $ic; ?>&cat=All" class="btn btn-sm btn-link text-decoration-none">View All</a>
                 </div>
             <?php endif; ?>
 
@@ -251,15 +304,20 @@ if($ic) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Fake Loading Animation
         document.addEventListener("DOMContentLoaded", function() {
+            // If there is a category filter, load instantly (don't show fake loading)
+            // If it's the first load, show animation
+            var urlParams = new URLSearchParams(window.location.search);
+            var hasCat = urlParams.has('cat');
+            
+            var delay = hasCat ? 0 : 1200;
+
             setTimeout(function() {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('data').style.display = 'block';
-            }, 1200);
+            }, delay);
         });
 
-        // Zoom Logic
         function showImage(src) {
             document.getElementById('modalImage').src = src;
             var myModal = new bootstrap.Modal(document.getElementById('imageModal'));

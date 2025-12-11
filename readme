@@ -23,9 +23,11 @@ MyHealthID leverages the **National Digital ID** framework to allow authorized m
 
 HI everyone.
 To run this demo, you should
+0) Make sure all your devices connect to same WIFI
 1) open CMD / powershell
 2) ipconfig<!-- copy this and paste it -->
 3) find your IPV4 Address
 4) http:// + your IP + /iSquare/scan.php?id=900101-14-1234
 5) then you can go generate QR in any QR generator
 6) scan with your phone and done
+

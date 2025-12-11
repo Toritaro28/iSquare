@@ -1,140 +1,274 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Generation Time: Dec 11, 2025 at 08:38 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
-CREATE TABLE patients (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ic_number VARCHAR(20) NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    blood_type VARCHAR(5),
-    allergy VARCHAR(255),
-    emergency_contact VARCHAR(20),
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
-INSERT INTO patients (ic_number, name, blood_type, allergy, emergency_contact) 
-VALUES ('900101-14-1234', 'Ali Bin Ahmad', 'O+', 'PENICILLIN (Severe)', '+6012-3456789');
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
 
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
+--
+-- Database: `myhealthid`
+--
 
+-- --------------------------------------------------------
 
-------------------------------------------------
---IF error while pasting please paste from here--
-------------------------------------------------
--- 1. Create the Security Log Table
-CREATE TABLE IF NOT EXISTS access_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ic_number VARCHAR(20) NOT NULL,
-    doctor_name VARCHAR(100) DEFAULT 'Dr. Azlan (Emergency Dept)',
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+--
+-- Table structure for table `access_logs`
+--
 
--- 2. Make sure your patients table allows NULLs for smoother updates if needed
-ALTER TABLE patients MODIFY allergy VARCHAR(255) DEFAULT 'None';
+CREATE TABLE `access_logs` (
+  `id` int(11) NOT NULL,
+  `ic_number` varchar(20) NOT NULL,
+  `doctor_name` varchar(100) DEFAULT 'Dr. Azlan (Emergency Dept)',
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
------------------------------------------
--- Table for unlimited medical history (X-Rays, multiple allergies, etc.)
-CREATE TABLE IF NOT EXISTS medical_records (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ic_number VARCHAR(20),
-    category VARCHAR(50),  -- e.g., "Allergy", "X-Ray", "Diagnosis", "Lab Result"
-    description TEXT,
-    doctor_name VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+--
+-- Dumping data for table `access_logs`
+--
 
--- Insert some dummy data so the app isn't empty
-INSERT INTO medical_records (ic_number, category, description, doctor_name, created_at)
-VALUES 
-('900101-14-1234', 'X-Ray', 'Chest X-Ray Clear. No signs of infection.', 'Dr. Lim', NOW()),
-('900101-14-1234', 'Allergy', 'Mild reaction to Dust Mites.', 'Dr. Siva', NOW());
+INSERT INTO `access_logs` (`id`, `ic_number`, `doctor_name`, `timestamp`) VALUES
+(1, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:54:19'),
+(2, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:56:12'),
+(3, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:57:09'),
+(4, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:00:18'),
+(5, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:00:52'),
+(6, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:01:04'),
+(7, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:16:28'),
+(8, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:16'),
+(9, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:21'),
+(10, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:29'),
+(11, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:18:01'),
+(12, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:43:43'),
+(13, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:45:37'),
+(14, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:46:08'),
+(15, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:47:48'),
+(16, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:49:17'),
+(17, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:49:37'),
+(18, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:55:30'),
+(19, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:56:44'),
+(20, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:02:40'),
+(21, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:09:41'),
+(22, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:10:06'),
+(23, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:14:46'),
+(24, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:19:08'),
+(25, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:26:00'),
+(26, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:42:19'),
+(27, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:13:48'),
+(28, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:16:00'),
+(29, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:17:03'),
+(30, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:24:33'),
+(31, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:34:13');
 
--------------------------------------------------------------------------------------------
-ALTER TABLE medical_records ADD COLUMN attachment VARCHAR(255) DEFAULT NULL;
--------------------------------------------------------------------------------------------
+-- --------------------------------------------------------
 
--- 1. Create Hospitals Table
-CREATE TABLE IF NOT EXISTS hospitals (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    type VARCHAR(50) -- 'Government' or 'Private'
-);
+--
+-- Table structure for table `doctors`
+--
 
--- 2. Create Doctors Table (Linked to Hospital)
-CREATE TABLE IF NOT EXISTS doctors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    hospital_id INT,
-    FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
-);
+CREATE TABLE `doctors` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `hospital_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 3. Insert Real Malaysian Hospitals (Gov & Private)
-INSERT INTO hospitals (name, type) VALUES 
-('Hospital Kuala Lumpur (HKL)', 'Government'),
-('Hospital Serdang', 'Government'),
-('Hospital Sungai Buloh', 'Government'),
-('Hospital Putrajaya', 'Government'),
-('Hospital Selayang', 'Government'),
-('Hospital Sultanah Aminah (JB)', 'Government'),
-('Hospital Pulau Pinang', 'Government'),
-('Pusat Perubatan UM (PPUM)', 'Government'),
-('Sunway Medical Centre', 'Private'),
-('Gleneagles Kuala Lumpur', 'Private'),
-('Pantai Hospital KL', 'Private'),
-('Subang Jaya Medical Centre', 'Private');
+--
+-- Dumping data for table `doctors`
+--
 
--- 4. Insert Dummy Doctors linked to these hospitals
-INSERT INTO doctors (name, hospital_id) VALUES 
-('Dr. Azlan', 1),       -- Works at HKL
-('Dr. Sarah Lim', 2),   -- Works at Serdang
-('Dr. Kumar', 9),       -- Works at Sunway (Private)
-('Dr. Wong', 10);       -- Works at Gleneagles (Private)
-------------------------------------------------
--- 1. ADD MORE DOCTORS (Gov & Private)
-INSERT INTO doctors (name, hospital_id) VALUES 
-('Dr. Aminah binti Razak', 4),   -- Hospital Putrajaya (Gov)
-('Dr. Brenda Lee', 7),           -- Hospital Pulau Pinang (Gov)
-('Dr. Rajandran a/l Muthu', 11), -- Pantai Hospital KL (Private)
-('Dr. Lim Wei Seng', 3);         -- Hospital Sungai Buloh (Gov)
+INSERT INTO `doctors` (`id`, `name`, `hospital_id`) VALUES
+(1, 'Dr. Azlan', 1),
+(2, 'Dr. Sarah Lim', 2),
+(3, 'Dr. Kumar', 9),
+(4, 'Dr. Wong', 10),
+(5, 'Dr. Aminah binti Razak', 4),
+(6, 'Dr. Brenda Lee', 7),
+(7, 'Dr. Rajandran a/l Muthu', 11),
+(8, 'Dr. Lim Wei Seng', 3),
+(9, 'Dr. Faridah binti Yusof', 1),
+(10, 'Dr. Kevin Tan', 1),
+(11, 'Dr. Nurul Huda', 1),
+(12, 'Dr. Jason Liew', 9),
+(13, 'Dr. Susan George', 9),
+(14, 'Dr. Rizwan Ali', 2);
 
--- 2. ADD MORE PATIENTS (Diverse Profiles)
-INSERT INTO patients (ic_number, name, blood_type, allergy, emergency_contact) VALUES 
-('880505-10-5588', 'Tan Mei Ling', 'A+', 'SHELLFISH (Severe)', '+6012-9988776'),
-('751212-08-9988', 'Muthusamy a/l Rajan', 'B+', 'NSAIDS / Aspirin', '+6019-1122334'),
-('950220-14-1122', 'Nurul Izzah', 'AB-', 'None', '+6017-4455667');
+-- --------------------------------------------------------
 
--- 3. ADD INITIAL HISTORY (So they aren't empty when you scan)
--- Tan Mei Ling went to Pantai Hospital (Private) for rash
-INSERT INTO medical_records (ic_number, category, description, doctor_name) VALUES 
-('880505-10-5588', 'Diagnosis', '[Pantai Hospital KL] Acute allergic reaction to Prawns. Administered Antihistamine.', 'Dr. Rajandran a/l Muthu');
+--
+-- Table structure for table `hospitals`
+--
 
--- Muthusamy went to Hospital Putrajaya (Gov) for Diabetes check
-INSERT INTO medical_records (ic_number, category, description, doctor_name) VALUES 
-('751212-08-9988', 'Lab Result', '[Hospital Putrajaya] Blood Glucose Level: 7.5 mmol/L. Stable.', 'Dr. Aminah binti Razak');
+CREATE TABLE `hospitals` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `type` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- ADDING COLLEAGUES (Doctors in the SAME hospitals)
+--
+-- Dumping data for table `hospitals`
+--
 
--- 1. Colleagues for Dr. Azlan at HKL (Hospital ID: 1)
-INSERT INTO doctors (name, hospital_id) VALUES 
-('Dr. Faridah binti Yusof', 1),    -- Emergency Dept
-('Dr. Kevin Tan', 1),              -- Surgery Dept
-('Dr. Nurul Huda', 1);             -- Cardiology
+INSERT INTO `hospitals` (`id`, `name`, `type`) VALUES
+(1, 'Hospital Kuala Lumpur (HKL)', 'Government'),
+(2, 'Hospital Serdang', 'Government'),
+(3, 'Hospital Sungai Buloh', 'Government'),
+(4, 'Hospital Putrajaya', 'Government'),
+(5, 'Hospital Selayang', 'Government'),
+(6, 'Hospital Sultanah Aminah (JB)', 'Government'),
+(7, 'Hospital Pulau Pinang', 'Government'),
+(8, 'Pusat Perubatan UM (PPUM)', 'Government'),
+(9, 'Sunway Medical Centre', 'Private'),
+(10, 'Gleneagles Kuala Lumpur', 'Private'),
+(11, 'Pantai Hospital KL', 'Private'),
+(12, 'Subang Jaya Medical Centre', 'Private');
 
--- 2. Colleagues for Dr. Kumar at Sunway Medical (Hospital ID: 9)
-INSERT INTO doctors (name, hospital_id) VALUES 
-('Dr. Jason Liew', 9),             -- Pediatrics
-('Dr. Susan George', 9);           -- Orthopedics
+-- --------------------------------------------------------
 
--- 3. Colleagues for Dr. Sarah at Hospital Serdang (Hospital ID: 2)
-INSERT INTO doctors (name, hospital_id) VALUES 
-('Dr. Rizwan Ali', 2);
+--
+-- Table structure for table `medical_records`
+--
 
+CREATE TABLE `medical_records` (
+  `id` int(11) NOT NULL,
+  `ic_number` varchar(20) DEFAULT NULL,
+  `category` varchar(50) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `doctor_name` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `attachment` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `medical_records`
+--
 
--- 1. MIGRATE existing allergies to the medical_records table
-INSERT INTO medical_records (ic_number, category, description, doctor_name)
-SELECT ic_number, 'Allergy', allergy, 'System Migration'
-FROM patients 
-WHERE allergy IS NOT NULL AND allergy != '' AND allergy != 'None';
+INSERT INTO `medical_records` (`id`, `ic_number`, `category`, `description`, `doctor_name`, `created_at`, `attachment`) VALUES
+(1, '900101-14-1234', 'X-Ray', '[Hospital Kuala Lumpur (HKL)] Fracture detected on left rib. Clean break.', 'Dr. Azlan', '2025-12-11 05:13:45', 'Xray.png'),
+(2, '900101-14-1234', 'Diagnosis', '[Hospital Kuala Lumpur (HKL)] Administered Morphine. Patient stable.', 'Dr. Faridah binti Yusof', '2025-12-11 06:13:45', NULL),
+(3, '880505-10-5588', 'CT Scan', '[Sunway Medical Centre] Head CT shows mild concussion. No internal bleeding.', 'Dr. Kumar', '2025-12-10 07:13:45', 'CT.png'),
+(4, '880505-10-5588', 'Allergy', '[Sunway Medical Centre] SHELLFISH', 'Dr. Kumar', '2025-12-10 07:13:45', NULL),
+(5, '751212-08-9988', 'Lab Result', '[Klinik Kesihatan] Blood Glucose: 8.2 mmol/L. High.', 'Dr. Aminah binti Razak', '2025-12-08 07:13:45', NULL),
+(6, '900101-14-1234', 'Lab Result', '[Hospital Kuala Lumpur (HKL)] Annual Blood Test. Cholesterol slightly high (5.8). Advice: Diet control.', 'Dr. Azlan', '2025-10-12 07:21:56', NULL),
+(7, '880505-10-5588', 'Diagnosis', '[Klinik Kesihatan] Patient complained of nausea after seafood dinner. Prescribed Charcoal pills.', 'Dr. Aminah binti Razak', '2025-12-04 07:21:56', NULL),
+(8, '751212-08-9988', 'Prescription', '[Hospital Kuala Lumpur (HKL)] Insulin Glargine 10 units daily. Monitor sugar levels.', 'Dr. Faridah binti Yusof', '2024-12-11 07:21:56', NULL);
 
--- 2. DROP the old column (This is the big change)
-ALTER TABLE patients DROP COLUMN allergy;
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `patients`
+--
+
+CREATE TABLE `patients` (
+  `id` int(11) NOT NULL,
+  `ic_number` varchar(20) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `blood_type` varchar(5) DEFAULT NULL,
+  `allergy` varchar(255) DEFAULT 'None',
+  `emergency_contact` varchar(20) DEFAULT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `patients`
+--
+
+INSERT INTO `patients` (`id`, `ic_number`, `name`, `blood_type`, `allergy`, `emergency_contact`, `last_updated`) VALUES
+(1, '900101-14-1234', 'Ali Bin Ahmad', 'O+', 'None', '+6012-3456789', '2025-12-11 04:09:22'),
+(2, '880505-10-5588', 'Tan Mei Ling', 'A+', 'SHELLFISH', '+6012-9988776', '2025-12-11 06:36:19'),
+(3, '751212-08-9988', 'Muthusamy a/l Rajan', 'B+', 'None', '+6019-1122334', '2025-12-11 06:36:19'),
+(4, '950220-14-1122', 'Nurul Izzah', 'AB-', 'None', '+6017-4455667', '2025-12-11 06:36:19');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `access_logs`
+--
+ALTER TABLE `access_logs`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `doctors`
+--
+ALTER TABLE `doctors`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `hospital_id` (`hospital_id`);
+
+--
+-- Indexes for table `hospitals`
+--
+ALTER TABLE `hospitals`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `medical_records`
+--
+ALTER TABLE `medical_records`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `patients`
+--
+ALTER TABLE `patients`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `access_logs`
+--
+ALTER TABLE `access_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+
+--
+-- AUTO_INCREMENT for table `doctors`
+--
+ALTER TABLE `doctors`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT for table `hospitals`
+--
+ALTER TABLE `hospitals`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- AUTO_INCREMENT for table `medical_records`
+--
+ALTER TABLE `medical_records`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `patients`
+--
+ALTER TABLE `patients`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `doctors`
+--
+ALTER TABLE `doctors`
+  ADD CONSTRAINT `doctors_ibfk_1` FOREIGN KEY (`hospital_id`) REFERENCES `hospitals` (`id`);
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
