@@ -94,7 +94,10 @@
             <div class="qr-border">
                 <!-- IMPORTANT: Make sure you have 'qr_code.png' in your folder -->
                 <!-- Use a generic placeholder if you haven't generated one yet -->
-                <img src="qr_code.png" class="qr-img" alt="Digital ID QR" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://192.168.0.185/iSquare/scan.php?id=900101-14-1234'">
+                <!-- DYNAMIC QR: Includes 'mode=qr' to prove consent -->
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://192.168.0.185/iSquare/scan.php?id=900101-14-1234%26mode=qr" 
+                class="qr-img" 
+                alt="Scan for Consent">
             </div>
             
             <p class="mt-3 text-danger small fw-bold blink">

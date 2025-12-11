@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 11, 2025 at 08:38 AM
+-- Generation Time: Dec 11, 2025 at 03:06 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -31,45 +31,101 @@ CREATE TABLE `access_logs` (
   `id` int(11) NOT NULL,
   `ic_number` varchar(20) NOT NULL,
   `doctor_name` varchar(100) DEFAULT 'Dr. Azlan (Emergency Dept)',
-  `timestamp` timestamp NOT NULL DEFAULT current_timestamp()
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
+  `access_method` varchar(20) DEFAULT 'QR',
+  `alert_sent` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `access_logs`
 --
 
-INSERT INTO `access_logs` (`id`, `ic_number`, `doctor_name`, `timestamp`) VALUES
-(1, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:54:19'),
-(2, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:56:12'),
-(3, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:57:09'),
-(4, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:00:18'),
-(5, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:00:52'),
-(6, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:01:04'),
-(7, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:16:28'),
-(8, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:16'),
-(9, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:21'),
-(10, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:29'),
-(11, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:18:01'),
-(12, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:43:43'),
-(13, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:45:37'),
-(14, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:46:08'),
-(15, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:47:48'),
-(16, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:49:17'),
-(17, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:49:37'),
-(18, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:55:30'),
-(19, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:56:44'),
-(20, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:02:40'),
-(21, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:09:41'),
-(22, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:10:06'),
-(23, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:14:46'),
-(24, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:19:08'),
-(25, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:26:00'),
-(26, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:42:19'),
-(27, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:13:48'),
-(28, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:16:00'),
-(29, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:17:03'),
-(30, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:24:33'),
-(31, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:34:13');
+INSERT INTO `access_logs` (`id`, `ic_number`, `doctor_name`, `timestamp`, `access_method`, `alert_sent`) VALUES
+(1, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:54:19', 'QR', 0),
+(2, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:56:12', 'QR', 0),
+(3, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 04:57:09', 'QR', 0),
+(4, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:00:18', 'QR', 0),
+(5, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:00:52', 'QR', 0),
+(6, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:01:04', 'QR', 0),
+(7, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:16:28', 'QR', 0),
+(8, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:16', 'QR', 0),
+(9, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:21', 'QR', 0),
+(10, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:17:29', 'QR', 0),
+(11, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:18:01', 'QR', 0),
+(12, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:43:43', 'QR', 0),
+(13, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:45:37', 'QR', 0),
+(14, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:46:08', 'QR', 0),
+(15, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:47:48', 'QR', 0),
+(16, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:49:17', 'QR', 0),
+(17, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:49:37', 'QR', 0),
+(18, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:55:30', 'QR', 0),
+(19, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 05:56:44', 'QR', 0),
+(20, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:02:40', 'QR', 0),
+(21, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:09:41', 'QR', 0),
+(22, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:10:06', 'QR', 0),
+(23, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:14:46', 'QR', 0),
+(24, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:19:08', 'QR', 0),
+(25, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:26:00', 'QR', 0),
+(26, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 06:42:19', 'QR', 0),
+(27, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:13:48', 'QR', 0),
+(28, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:16:00', 'QR', 0),
+(29, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:17:03', 'QR', 0),
+(30, '900101-14-1234', 'Dr. Azlan (Emergency Dept)', '2025-12-11 07:24:33', 'QR', 0),
+(31, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:34:13', 'QR', 0),
+(32, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:45:59', 'QR', 0),
+(33, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:46:07', 'QR', 0),
+(34, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:46:12', 'QR', 0),
+(35, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:46:17', 'QR', 0),
+(36, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:46:23', 'QR', 0),
+(37, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:46:45', 'QR', 0),
+(38, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:46:49', 'QR', 0),
+(39, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:48:17', 'QR', 0),
+(40, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:50:25', 'QR', 0),
+(41, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:50:28', 'QR', 0),
+(42, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:50:32', 'QR', 0),
+(43, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:53:16', 'QR', 0),
+(44, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:55:25', 'QR', 0),
+(45, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 07:56:21', 'QR', 0),
+(46, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:24', 'QR', 0),
+(47, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:26', 'QR', 0),
+(48, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:27', 'QR', 0),
+(49, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:28', 'QR', 0),
+(50, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:29', 'QR', 0),
+(51, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:29', 'QR', 0),
+(52, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:30', 'QR', 0),
+(53, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:05:31', 'QR', 0),
+(54, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:13:51', 'QR', 0),
+(55, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:14', 'QR', 0),
+(56, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:43', 'QR', 0),
+(57, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:44', 'QR', 0),
+(58, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:45', 'QR', 0),
+(59, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:48', 'QR', 0),
+(60, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:48', 'QR', 0),
+(61, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:48', 'QR', 0),
+(62, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:23:49', 'QR', 0),
+(63, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:24:28', 'QR', 0),
+(64, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:24:36', 'QR', 0),
+(65, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:24:38', 'QR', 0),
+(66, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 08:24:55', 'QR', 0),
+(67, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:50:23', 'PATIENT_CONSENT', 0),
+(68, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:50:35', 'PATIENT_CONSENT', 0),
+(69, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:50:37', 'PATIENT_CONSENT', 0),
+(70, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:50:40', 'PATIENT_CONSENT', 0),
+(71, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:50:52', 'PATIENT_CONSENT', 0),
+(72, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:51:22', 'PATIENT_CONSENT', 0),
+(73, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:51:27', 'PATIENT_CONSENT', 0),
+(74, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:51:30', 'PATIENT_CONSENT', 0),
+(75, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:55:41', 'PATIENT_CONSENT', 0),
+(76, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:55:50', 'PATIENT_CONSENT', 0),
+(77, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:58:18', 'PATIENT_CONSENT', 0),
+(78, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:58:26', 'PATIENT_CONSENT', 0),
+(79, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 13:58:50', 'PATIENT_CONSENT', 0),
+(80, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 14:03:28', 'PATIENT_CONSENT', 0),
+(81, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 14:05:29', 'EMERGENCY_OVERRIDE', 1),
+(82, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 14:05:40', 'EMERGENCY_OVERRIDE', 1),
+(83, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 14:05:43', 'EMERGENCY_OVERRIDE', 1),
+(84, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 14:05:46', 'EMERGENCY_OVERRIDE', 1),
+(85, '900101-14-1234', 'Dr. Scanner (Mobile)', '2025-12-11 14:06:17', 'EMERGENCY_OVERRIDE', 1);
 
 -- --------------------------------------------------------
 
@@ -161,7 +217,9 @@ INSERT INTO `medical_records` (`id`, `ic_number`, `category`, `description`, `do
 (5, '751212-08-9988', 'Lab Result', '[Klinik Kesihatan] Blood Glucose: 8.2 mmol/L. High.', 'Dr. Aminah binti Razak', '2025-12-08 07:13:45', NULL),
 (6, '900101-14-1234', 'Lab Result', '[Hospital Kuala Lumpur (HKL)] Annual Blood Test. Cholesterol slightly high (5.8). Advice: Diet control.', 'Dr. Azlan', '2025-10-12 07:21:56', NULL),
 (7, '880505-10-5588', 'Diagnosis', '[Klinik Kesihatan] Patient complained of nausea after seafood dinner. Prescribed Charcoal pills.', 'Dr. Aminah binti Razak', '2025-12-04 07:21:56', NULL),
-(8, '751212-08-9988', 'Prescription', '[Hospital Kuala Lumpur (HKL)] Insulin Glargine 10 units daily. Monitor sugar levels.', 'Dr. Faridah binti Yusof', '2024-12-11 07:21:56', NULL);
+(8, '751212-08-9988', 'Prescription', '[Hospital Kuala Lumpur (HKL)] Insulin Glargine 10 units daily. Monitor sugar levels.', 'Dr. Faridah binti Yusof', '2024-12-11 07:21:56', NULL),
+(9, '900101-14-1234', 'Allergy', '[Hospital Kuala Lumpur (HKL)] PRAWN', 'Dr. Azlan', '2025-12-11 08:24:22', NULL),
+(10, '900101-14-1234', 'Allergy', '[Hospital Kuala Lumpur (HKL)] fish', 'Dr. Azlan', '2025-12-11 08:24:53', NULL);
 
 -- --------------------------------------------------------
 
@@ -184,7 +242,7 @@ CREATE TABLE `patients` (
 --
 
 INSERT INTO `patients` (`id`, `ic_number`, `name`, `blood_type`, `allergy`, `emergency_contact`, `last_updated`) VALUES
-(1, '900101-14-1234', 'Ali Bin Ahmad', 'O+', 'None', '+6012-3456789', '2025-12-11 04:09:22'),
+(1, '900101-14-1234', 'Ali Bin Ahmad', 'O+', 'PRAWN, fish', '+6012-3456789', '2025-12-11 04:09:22'),
 (2, '880505-10-5588', 'Tan Mei Ling', 'A+', 'SHELLFISH', '+6012-9988776', '2025-12-11 06:36:19'),
 (3, '751212-08-9988', 'Muthusamy a/l Rajan', 'B+', 'None', '+6019-1122334', '2025-12-11 06:36:19'),
 (4, '950220-14-1122', 'Nurul Izzah', 'AB-', 'None', '+6017-4455667', '2025-12-11 06:36:19');
@@ -232,7 +290,7 @@ ALTER TABLE `patients`
 -- AUTO_INCREMENT for table `access_logs`
 --
 ALTER TABLE `access_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 
 --
 -- AUTO_INCREMENT for table `doctors`
@@ -250,7 +308,7 @@ ALTER TABLE `hospitals`
 -- AUTO_INCREMENT for table `medical_records`
 --
 ALTER TABLE `medical_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `patients`
