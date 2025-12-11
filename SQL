@@ -30,3 +30,61 @@ CREATE TABLE IF NOT EXISTS access_logs (
 
 -- 2. Make sure your patients table allows NULLs for smoother updates if needed
 ALTER TABLE patients MODIFY allergy VARCHAR(255) DEFAULT 'None';
+
+-----------------------------------------
+-- Table for unlimited medical history (X-Rays, multiple allergies, etc.)
+CREATE TABLE IF NOT EXISTS medical_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ic_number VARCHAR(20),
+    category VARCHAR(50),  -- e.g., "Allergy", "X-Ray", "Diagnosis", "Lab Result"
+    description TEXT,
+    doctor_name VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert some dummy data so the app isn't empty
+INSERT INTO medical_records (ic_number, category, description, doctor_name, created_at)
+VALUES 
+('900101-14-1234', 'X-Ray', 'Chest X-Ray Clear. No signs of infection.', 'Dr. Lim', NOW()),
+('900101-14-1234', 'Allergy', 'Mild reaction to Dust Mites.', 'Dr. Siva', NOW());
+
+-------------------------------------------------------------------------------------------
+ALTER TABLE medical_records ADD COLUMN attachment VARCHAR(255) DEFAULT NULL;
+-------------------------------------------------------------------------------------------
+
+-- 1. Create Hospitals Table
+CREATE TABLE IF NOT EXISTS hospitals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) -- 'Government' or 'Private'
+);
+
+-- 2. Create Doctors Table (Linked to Hospital)
+CREATE TABLE IF NOT EXISTS doctors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    hospital_id INT,
+    FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
+);
+
+-- 3. Insert Real Malaysian Hospitals (Gov & Private)
+INSERT INTO hospitals (name, type) VALUES 
+('Hospital Kuala Lumpur (HKL)', 'Government'),
+('Hospital Serdang', 'Government'),
+('Hospital Sungai Buloh', 'Government'),
+('Hospital Putrajaya', 'Government'),
+('Hospital Selayang', 'Government'),
+('Hospital Sultanah Aminah (JB)', 'Government'),
+('Hospital Pulau Pinang', 'Government'),
+('Pusat Perubatan UM (PPUM)', 'Government'),
+('Sunway Medical Centre', 'Private'),
+('Gleneagles Kuala Lumpur', 'Private'),
+('Pantai Hospital KL', 'Private'),
+('Subang Jaya Medical Centre', 'Private');
+
+-- 4. Insert Dummy Doctors linked to these hospitals
+INSERT INTO doctors (name, hospital_id) VALUES 
+('Dr. Azlan', 1),       -- Works at HKL
+('Dr. Sarah Lim', 2),   -- Works at Serdang
+('Dr. Kumar', 9),       -- Works at Sunway (Private)
+('Dr. Wong', 10);       -- Works at Gleneagles (Private)

@@ -1,23 +1,16 @@
 <?php 
 include 'db.php'; 
-
-// 1. Get Patient Data
 $ic = isset($_GET['id']) ? $conn->real_escape_string($_GET['id']) : '';
 $patient = null;
+$records = null;
 
-// Only run query if ID is provided
 if($ic) {
     $sql = "SELECT * FROM patients WHERE ic_number = '$ic'";
     $result = $conn->query($sql);
     if($result && $result->num_rows > 0) {
         $patient = $result->fetch_assoc();
-        
-        // 2. SECURITY FEATURE: Log this access automatically
-        // We use INSERT IGNORE or standard INSERT. 
-        // Ensure your table 'access_logs' exists from Step 1!
-        $doctor = 'Dr. Azlan (Emergency Dept)';
-        $log_sql = "INSERT INTO access_logs (ic_number, doctor_name) VALUES ('$ic', '$doctor')";
-        $conn->query($log_sql);
+        $conn->query("INSERT INTO access_logs (ic_number, doctor_name) VALUES ('$ic', 'Dr. Azlan (Emergency Dept)')");
+        $records = $conn->query("SELECT * FROM medical_records WHERE ic_number = '$ic' ORDER BY created_at DESC");
     }
 }
 ?>
@@ -25,130 +18,119 @@ if($ic) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>MyHealthID - Provider View</title>
+    <title>MyHealthID</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap CSS (If this fails offline, the style looks plain but works. Ideally download bootstrap.css if totally offline) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome (Icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        body { background-color: #f0f2f5; font-family: sans-serif; }
-        .header-bar { background: linear-gradient(90deg, #004d40 0%, #00695c 100%); color: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .blink-urgent { animation: blinker 1s linear infinite; color: #d32f2f; font-weight: 800; }
-        @keyframes blinker { 50% { opacity: 0; } }
-        .card-medical { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; background: white; margin-bottom: 15px; }
-        .verified-badge { background-color: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; display: inline-block; }
-        .log-badge { font-size: 0.7rem; color: #666; border: 1px solid #ccc; padding: 2px 6px; border-radius: 4px; }
+        body { background-color: #f0f2f5; font-family: sans-serif; padding-bottom: 50px; }
+        .header-bar { background: #00695c; color: white; padding: 15px; }
+        .timeline-card { border-left: 4px solid #ccc; margin-bottom: 15px; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .type-X-Ray { border-left-color: #1976d2; } 
+        .type-Allergy { border-left-color: #d32f2f; }
         
-        /* Ensure Data is hidden initially */
+        /* Image styling */
+        .scan-img { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #ddd; }
+        
         #data { display: none; }
         #loading { display: flex; }
     </style>
 </head>
 <body>
 
-    <!-- Loading Screen -->
-    <div id="loading" class="text-center flex-column justify-content-center align-items-center vh-100 bg-white" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:999;">
-        <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <h4 class="mt-4 text-dark fw-bold">Connecting to National ID Gateway...</h4>
-        <p class="text-muted small">Handshaking with MOH Database (Secure SSL)</p>
+    <!-- Loading -->
+    <div id="loading" class="text-center flex-column justify-content-center align-items-center vh-100 bg-white" style="position:fixed; top:0; left:0; width:100%; z-index:999;">
+        <div class="spinner-border text-success" role="status"></div>
+        <h4 class="mt-4">Retrieving Cloud Records...</h4>
     </div>
 
-    <!-- Main App Content -->
+    <!-- Data -->
     <div id="data">
-        
-        <!-- App Header -->
-        <div class="header-bar d-flex justify-content-between align-items-center">
-            <div><strong>MyHealthID</strong> Provider</div>
-            <div class="small opacity-75">Dr. Azlan • ER Unit</div>
-        </div>
+        <div class="header-bar"><strong>MyHealthID</strong> Provider View</div>
 
-        <div class="container mt-4">
-            
+        <div class="container mt-3">
             <?php if($patient): ?>
-            <!-- Verification Card -->
-            <div class="text-center mb-4">
-                <!-- Using a generic placeholder if internet is slow -->
-                <div style="width: 100px; height: 100px; background-color: #00695c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 2rem; font-weight: bold;">
-                    <?php echo substr($patient['name'], 0, 1); ?>
-                </div>
-                
-                <h2 class="mt-2 fw-bold"><?php echo $patient['name']; ?></h2>
-                <div class="mt-1">
-                    <span class="verified-badge">✔ Biometrics Matched</span>
-                </div>
-                <div class="mt-2">
-                    <span class="badge bg-secondary"><?php echo $patient['ic_number']; ?></span>
-                </div>
-            </div>
-
-            <!-- Critical Medical Info -->
-            <div class="card card-medical">
-                <div class="card-header bg-danger text-white fw-bold">
-                    CRITICAL ALERTS
-                </div>
-                <div class="card-body text-center">
-                    <h5 class="text-muted small text-uppercase">Known Allergies</h5>
-                    <p class="display-6 blink-urgent mb-0"><?php echo $patient['allergy']; ?></p>
-                </div>
-            </div>
-
-            <!-- Vitals / Info -->
-            <div class="row g-2">
-                <div class="col-6">
-                    <div class="card card-medical h-100">
-                        <div class="card-body text-center">
-                            <small class="text-muted">Blood Type</small>
-                            <h3 class="fw-bold text-dark"><?php echo $patient['blood_type']; ?></h3>
-                        </div>
+            
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center" style="width:50px; height:50px; font-weight:bold;">
+                        <?php echo substr($patient['name'], 0, 1); ?>
                     </div>
-                </div>
-                <div class="col-6">
-                    <div class="card card-medical h-100">
-                        <div class="card-body text-center">
-                            <small class="text-muted">Emergency</small>
-                            <h5 class="fw-bold text-primary mt-1"><?php echo $patient['emergency_contact']; ?></h5>
-                        </div>
+                    <div>
+                        <h5 class="m-0 fw-bold"><?php echo $patient['name']; ?></h5>
+                        <small class="text-muted"><?php echo $patient['ic_number']; ?></small>
                     </div>
                 </div>
             </div>
 
-            <!-- Access Log History -->
-            <div class="mt-4 text-center">
-                <p class="text-muted small">
-                    🔒 Access Logged at <?php echo date("H:i:s"); ?>.<br>
-                    Patient notified via MySejahtera.
-                </p>
-            </div>
+            <!-- TIMELINE -->
+            <h6 class="text-muted text-uppercase ms-1 mb-3"><i class="fa-solid fa-file-medical"></i> Medical Records</h6>
+            
+            <?php if($records && $records->num_rows > 0): ?>
+                <?php while($row = $records->fetch_assoc()): ?>
+                    <div class="timeline-card type-<?php echo $row['category']; ?>">
+                        <div class="d-flex justify-content-between">
+                            <strong class="text-uppercase"><?php echo $row['category']; ?></strong>
+                            <small class="text-muted"><?php echo date('d M', strtotime($row['created_at'])); ?></small>
+                        </div>
+                        
+                        <p class="mb-1 mt-2"><?php echo $row['description']; ?></p>
+                        
+                        <!-- IMAGE DISPLAY LOGIC -->
+                        <?php if($row['attachment']): ?>
+                            <div class="mt-2">
+                                <span class="badge bg-primary mb-1"><i class="fa-solid fa-paperclip"></i> Image Attached</span>
+                                <img src="uploads/<?php echo $row['attachment']; ?>" 
+                                    class="scan-img" 
+                                    onclick="showImage(this.src)" 
+                                    style="cursor: pointer;">
+                            </div>
+                        <?php endif; ?>
 
+                        <div class="mt-2 pt-2 border-top text-end">
+                            <small class="text-muted fst-italic">Signed by Dr. <?php echo $row['doctor_name']; ?></small>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
             <?php else: ?>
-                <div class="alert alert-danger m-4 text-center">
-                    <h4>Patient Not Found</h4>
-                    <p>IC: <?php echo $ic; ?></p>
-                    <a href="scan.php" class="btn btn-outline-danger">Try Again</a>
-                </div>
+                <div class="text-center text-muted p-3">No history records found.</div>
             <?php endif; ?>
 
+            <?php else: ?>
+                <div class="alert alert-danger">Patient Not Found</div>
+            <?php endif; ?>
         </div>
     </div>
+    
+    <!-- Image Zoom Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0">
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" class="img-fluid rounded shadow" style="max-height: 80vh;">
+        <button type="button" class="btn btn-light mt-3 rounded-pill" data-bs-dismiss="modal">Close View</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <!-- PURE JAVASCRIPT (No Internet Required) -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Wait 1.5 seconds, then switch screens
-            setTimeout(function() {
-                var loader = document.getElementById('loading');
-                var content = document.getElementById('data');
-                
-                if(loader && content) {
-                    loader.style.display = 'none';
-                    content.style.display = 'block';
-                }
-            }, 1500);
-        });
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Existing loading script
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('data').style.display = 'block';
+        }, 1000);
+    });
+
+    // New Zoom Script
+    function showImage(src) {
+        document.getElementById('modalImage').src = src;
+        var myModal = new bootstrap.Modal(document.getElementById('imageModal'));
+        myModal.show();
+    }
+</script>
 </body>
 </html>
