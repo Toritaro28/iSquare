@@ -7,10 +7,10 @@ if(isset($_POST['login'])) {
     $doctor_id = $_POST['doctor_id'];
     
     // Fetch Doctor + Hospital Details
-    $sql = "SELECT doctors.id, doctors.name AS doc_name, hospitals.name AS hosp_name, hospitals.type 
+    $sql = "SELECT doctors.doctor_id, doctors.name AS doc_name, hospitals.name AS hosp_name, hospitals.type 
             FROM doctors 
-            JOIN hospitals ON doctors.hospital_id = hospitals.id 
-            WHERE doctors.id = '$doctor_id'";
+            JOIN hospitals ON doctors.hospital_id = hospitals.hospital_id 
+            WHERE doctors.doctor_id = '$doctor_id'";
             
     $result = $conn->query($sql);
     
@@ -18,7 +18,7 @@ if(isset($_POST['login'])) {
         $user = $result->fetch_assoc();
         
         // SAVE TO SESSION
-        $_SESSION['doctor_id'] = $user['id'];
+        $_SESSION['doctor_id'] = $user['doctor_id'];
         $_SESSION['doctor_name'] = $user['doc_name'];
         $_SESSION['hospital_name'] = $user['hosp_name'];
         $_SESSION['hospital_type'] = $user['type']; 
@@ -94,7 +94,7 @@ $doctors = $conn->query("SELECT * FROM doctors ORDER BY name ASC");
                                 $hospitals->data_seek(0);
                                 while($row = $hospitals->fetch_assoc()): 
                             ?>
-                                <option value="<?php echo $row['id']; ?>"><?php echo $row['name']; ?></option>
+                                <option value="<?php echo $row['hospital_id']; ?>"><?php echo $row['name']; ?></option>
                             <?php 
                                 endwhile; 
                             }
@@ -118,7 +118,7 @@ $doctors = $conn->query("SELECT * FROM doctors ORDER BY name ASC");
                             ?>
                                 <option class="doc-option" 
                                         data-hosp="<?php echo $doc['hospital_id']; ?>" 
-                                        value="<?php echo $doc['id']; ?>">
+                                        value="<?php echo $doc['doctor_id']; ?>">
                                     <?php echo $doc['name']; ?>
                                 </option>
                             <?php 
